@@ -41,20 +41,28 @@ namespace Uploadcare.Upload
         /// <exception cref="UploadFailureException"> </exception>
         public Task<UploadcareFile> Upload(byte[] bytes, string filename, bool? store = null)
         {
-            if (string.IsNullOrEmpty(filename))
-            {
-                throw new ArgumentNullException(nameof(filename));
-            }
-
-            var content = new ByteArrayContent(bytes);
-
-            return UploadInternal(content, filename, store);
+            return UploadBytes(bytes, filename, null, store);
         }
 
         /// <summary>
         /// Uploads the file to Uploadcare.
         /// </summary>
-        /// <param name="bytes">File information</param>
+        /// <param name="bytes">File binary data</param>
+        /// <param name="filename">File name</param>
+        /// <param name="contentType">Content type</param>
+        /// <param name="store">Sets the file storing behavior. In this context, storing a file means making it permanently available</param>
+        /// <returns> An Uploadcare file </returns>
+        /// <exception cref="UploadFailureException"> </exception>
+
+        public Task<UploadcareFile> Upload(byte[] bytes, string filename, string contentType, bool? store = null)
+        {
+            return UploadBytes(bytes, filename, contentType, store);
+        }
+
+        /// <summary>
+        /// Uploads the file to Uploadcare.
+        /// </summary>
+        /// <param name="fileInfo">File information</param>
         /// <param name="store">Sets the file storing behavior. In this context, storing a file means making it permanently available</param>
         /// <returns> An Uploadcare file </returns>
         /// <exception cref="UploadFailureException"> </exception>
@@ -68,6 +76,23 @@ namespace Uploadcare.Upload
             var content = new StreamContent(File.OpenRead(fileInfo.FullName));
 
             return UploadInternal(content, fileInfo.FullName, store);
+        }
+
+        private Task<UploadcareFile> UploadBytes(byte[] bytes, string filename, string contentType, bool? store = null)
+        {
+            if (string.IsNullOrEmpty(filename))
+            {
+                throw new ArgumentNullException(nameof(filename));
+            }
+
+            var content = new ByteArrayContent(bytes);
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+            }
+
+            return UploadInternal(content, filename, store);
         }
 
         private async Task<UploadcareFile> UploadInternal(HttpContent binaryContent, string filename, bool? store = null)
